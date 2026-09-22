@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Chit Schemes{% endblock %}
+{% block content %}
+<h2>Chit Schemes</h2>
+{% if current_user.has_permission("chits.create") %}<a class="btn" href="{{ url_for("chits.create_chit") }}">+ New scheme</a>{% endif %}
+<table>
+<thead><tr><th>Name</th><th>Total</th><th>Duration</th><th>Installment</th><th>Status</th>
+{% if current_user.has_permission("installments.generate") %}<th>Action</th>{% endif %}</tr></thead>
+<tbody>
+{% for s in schemes %}
+<tr><td>{{ s.name }}</td><td>{{ s.total_amount }}</td><td>{{ s.duration_months }}</td>
+<td>{{ s.installment_amount }}</td><td>{{ s.status }}</td>
+{% if current_user.has_permission("installments.generate") %}
+<td><form class="inline" method="post" action="{{ url_for("chits.generate_installments", scheme_id=s.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+<button type="submit">Generate installments</button></form></td>
+{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

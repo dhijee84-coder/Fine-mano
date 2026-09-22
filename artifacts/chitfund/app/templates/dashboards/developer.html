@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Developer Dashboard{% endblock %}
+{% block content %}
+<h2>Developer Dashboard</h2>
+<div class="card-grid">
+  <div class="card"><h3>System Health</h3><a href="{{ url_for("developer.monitoring") }}">View monitoring</a></div>
+  <div class="card"><h3>Modules</h3><a href="{{ url_for("developer.modules") }}">Enable/disable modules</a></div>
+  <div class="card"><h3>API</h3><a href="{{ url_for("developer.api_clients") }}">API clients &amp; logs</a></div>
+  <div class="card"><h3>Database</h3><a href="{{ url_for("developer.database_inspector") }}">Inspector</a></div>
+  <div class="card"><h3>Full Console</h3><a href="{{ url_for("developer.overview") }}">Open Developer Console</a></div>
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Staff Dashboard{% endblock %}
+{% block content %}
+<h2>Staff Dashboard</h2>
+<div class="card-grid">
+  <div class="card"><h3>Assigned Members</h3><a href="{{ url_for("members.list_members") }}">View</a></div>
+</div>
+{% endblock %}

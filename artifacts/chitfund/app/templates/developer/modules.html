@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Modules{% endblock %}
+{% block content %}
+<h2>Module Management</h2>
+<p>Disabling a module blocks its routes on the backend, not just the menu.</p>
+<table>
+<thead><tr><th>Module</th><th>Status</th><th>Action</th></tr></thead>
+<tbody>
+{% for key in module_keys %}
+{% set setting = settings.get(key) %}
+{% set enabled = setting.enabled if setting else true %}
+<tr>
+  <td>{{ key }}</td>
+  <td>{{ "Enabled" if enabled else "Disabled" }}</td>
+  <td>
+    <form class="inline" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="module_key" value="{{ key }}"/>
+      <input type="hidden" name="enabled" value="{{ "false" if enabled else "true" }}"/>
+      <button type="submit">{{ "Disable" if enabled else "Enable" }}</button>
+    </form>
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

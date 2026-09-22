@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Permissions for {{ user.username }}{% endblock %}
+{% block content %}
+<h2>Permissions — {{ user.username }} ({{ user.role.name }})</h2>
+<div class="card">
+  <h3>Effective permissions</h3>
+  <p>{{ effective | sort | join(", ") }}</p>
+</div>
+<div class="card">
+  <h3>Grant / revoke an override</h3>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <label>Permission</label>
+    <select name="permission_code" required>
+      {% for p in permissions %}<option value="{{ p.code }}">{{ p.code }}</option>{% endfor %}
+    </select>
+    <label>Action</label>
+    <select name="grant" required>
+      <option value="true">Grant (add on top of role)</option>
+      <option value="false">Revoke (remove even if role has it)</option>
+    </select>
+    <label>Reason (required, goes to audit log)</label>
+    <input type="text" name="reason" required>
+    <button type="submit">Save override</button>
+  </form>
+</div>
+{% endblock %}

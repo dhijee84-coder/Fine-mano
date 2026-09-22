@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Chit Fund Management{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  {% if current_user %}
+  <header class="topnav">
+    <div class="brand">Chit Fund Mgmt</div>
+    <nav class="menu">
+      <a href="{{ url_for('dashboard.index') }}">Dashboard</a>
+      {% if current_user.has_permission('members.view') %}<a href="{{ url_for('members.list_members') }}">Members</a>{% endif %}
+      {% if current_user.has_permission('chits.view') %}<a href="{{ url_for('chits.list_chits') }}">Chits</a>{% endif %}
+      {% if current_user.has_permission('payments.view') %}<a href="{{ url_for('payments.list_payments') }}">Payments</a>{% endif %}
+      {% if current_user.has_permission('users.view') %}<a href="{{ url_for('admin.list_users') }}">Users</a>{% endif %}
+      {% if current_user.role.name == 'SUPER_ADMIN' %}<a href="{{ url_for('admin.list_roles') }}">Roles</a>{% endif %}
+      {% if current_user.has_permission('developer.view') %}<a href="{{ url_for('developer.overview') }}">Developer</a>{% endif %}
+      {% if current_user.role.name == 'MEMBER' %}<a href="{{ url_for('members.my_profile') }}">My Profile</a>{% endif %}
+    </nav>
+    <div class="user-box">
+      <span>{{ current_user.username }} ({{ current_user.role.name }})</span>
+      <form method="post" action="{{ url_for('auth.logout') }}" style="display:inline">
+        <button type="submit">Logout</button>
+      </form>
+    </div>
+  </header>
+  {% endif %}
+
+  <main class="content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

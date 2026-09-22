@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}API Clients{% endblock %}
+{% block content %}
+<h2>API Clients</h2>
+<table>
+<thead><tr><th>Name</th><th>Client ID</th><th>Secret</th><th>Scopes</th><th>Status</th><th>Action</th></tr></thead>
+<tbody>
+{% for c in clients %}
+<tr>
+<td>{{ c.name }}</td><td>{{ c.client_id }}</td><td>{{ c.masked_secret() }}</td>
+<td>{{ c.scopes }}</td><td>{{ "Active" if c.is_active else "Revoked" }}</td>
+<td>{% if c.is_active %}
+<form class="inline" method="post" action="{{ url_for("developer.revoke_api_client", client_id=c.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+<button class="danger" type="submit">Revoke</button></form>{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+<h3>Create client</h3>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <label>Name</label><input type="text" name="name" required>
+  <label>Scopes (comma-separated, e.g. sms.ingest,bank.webhook)</label><input type="text" name="scopes">
+  <button type="submit">Create</button>
+</form>
+{% endblock %}

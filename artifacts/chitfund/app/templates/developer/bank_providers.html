@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Bank Providers{% endblock %}
+{% block content %}
+<h2>Bank API Providers</h2>
+<p>Provider mode: <strong>{{ provider_mode }}</strong>. Only the mock provider is available until real
+credentials and official API documentation are supplied.</p>
+<table>
+<thead><tr><th>Provider</th><th>Enabled</th><th>Sync (min)</th></tr></thead>
+<tbody>
+{% for c in connections %}
+<tr><td>{{ c.provider_name }}</td><td>{{ c.is_enabled }}</td><td>{{ c.sync_frequency_minutes }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+<h3>Add connection</h3>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <label>Provider</label><input type="text" name="provider_name" value="mock">
+  <label>Sync frequency (minutes)</label><input type="number" name="sync_frequency_minutes" value="60">
+  <button type="submit">Create</button>
+</form>
+{% endblock %}

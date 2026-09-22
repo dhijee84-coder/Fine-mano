@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Developer Console{% endblock %}
+{% block content %}
+<h2>Developer Console — Overview</h2>
+<div class="card-grid">
+  <div class="card"><h3>Modules</h3><a href="{{ url_for('developer.modules') }}">Manage</a></div>
+  <div class="card"><h3>Website Settings</h3><a href="{{ url_for('developer.website_settings') }}">Configure</a></div>
+  <div class="card"><h3>Form Builder</h3><a href="{{ url_for('developer.form_builder') }}">Open</a></div>
+  <div class="card"><h3>Menu / Dashboard Builder</h3><a href="{{ url_for('developer.menu_builder') }}">Open</a></div>
+  <div class="card"><h3>Workflows</h3><a href="{{ url_for('developer.workflows') }}">Configure</a></div>
+  <div class="card"><h3>API Clients</h3><a href="{{ url_for('developer.api_clients') }}">Manage</a></div>
+  <div class="card"><h3>API Logs</h3><a href="{{ url_for('developer.api_logs') }}">View</a></div>
+  <div class="card"><h3>SMS Devices</h3><a href="{{ url_for('developer.sms_devices') }}">Manage</a></div>
+  <div class="card"><h3>Bank Providers</h3><a href="{{ url_for('developer.bank_providers') }}">Configure</a></div>
+  <div class="card"><h3>Database Inspector</h3><a href="{{ url_for('developer.database_inspector') }}">Open</a></div>
+  <div class="card"><h3>Dangerous Actions</h3><a href="{{ url_for('developer.request_dangerous_action') }}">Queue ({{ pending_actions }} pending)</a></div>
+  <div class="card"><h3>Monitoring</h3><a href="{{ url_for('developer.monitoring') }}">View logs</a></div>
+  <div class="card"><h3>Notifications</h3><a href="{{ url_for('developer.notifications') }}">Configure</a></div>
+</div>
+
+<div class="card">
+  <h3>Module status</h3>
+  <ul>
+  {% for key, enabled in modules.items() %}
+    <li>{{ key }}: {{ "Enabled" if enabled else "Disabled" }}</li>
+  {% endfor %}
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Recent errors</h3>
+  {% if recent_errors %}
+  <ul>{% for e in recent_errors %}<li>[{{ e.timestamp }}] {{ e.source }} — {{ e.message }}</li>{% endfor %}</ul>
+  {% else %}<p>No recent errors logged.</p>{% endif %}
+</div>
+{% endblock %}

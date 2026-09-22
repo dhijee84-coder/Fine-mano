@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}API Logs{% endblock %}
+{% block content %}
+<h2>API Logs</h2>
+<table>
+<thead><tr><th>Time</th><th>Client</th><th>Endpoint</th><th>Method</th><th>Status</th><th>Error</th></tr></thead>
+<tbody>
+{% for l in logs %}
+<tr><td>{{ l.timestamp }}</td><td>{{ l.client_id }}</td><td>{{ l.endpoint }}</td><td>{{ l.method }}</td>
+<td>{{ l.status_code }}</td><td>{{ l.error_message or "" }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

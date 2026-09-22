@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<h2>Admin Dashboard</h2>
+<div class="card-grid">
+  <div class="card"><h3>Members</h3><a href="{{ url_for("members.list_members") }}">Manage members</a></div>
+  <div class="card"><h3>Chits</h3><a href="{{ url_for("chits.list_chits") }}">Manage chit schemes</a></div>
+  <div class="card"><h3>Payments</h3><a href="{{ url_for("payments.list_payments") }}">Review payments</a></div>
+</div>
+{% endblock %}

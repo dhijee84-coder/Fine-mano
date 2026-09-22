@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Form Builder{% endblock %}
+{% block content %}
+<h2>Form Builder — {{ form_key }}</h2>
+<table>
+<thead><tr><th>#</th><th>Field</th><th>Label</th><th>Type</th><th>Required</th><th>Visible</th></tr></thead>
+<tbody>
+{% for f in fields %}
+<tr><td>{{ f.order_index }}</td><td>{{ f.field_name }}</td><td>{{ f.label }}</td><td>{{ f.field_type }}</td>
+<td>{{ f.required }}</td><td>{{ f.visible }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+<h3>Add field</h3>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <input type="hidden" name="form_key" value="{{ form_key }}"/>
+  <label>Field name</label><input type="text" name="field_name" required>
+  <label>Label</label><input type="text" name="label" required>
+  <label>Type</label>
+  <select name="field_type">
+    <option>text</option><option>number</option><option>date</option>
+    <option>select</option><option>checkbox</option><option>textarea</option>
+    <option>email</option><option>phone</option>
+  </select>
+  <label>Required</label>
+  <select name="required"><option value="false">No</option><option value="true">Yes</option></select>
+  <label>Order</label><input type="number" name="order_index" value="0">
+  <label>Help text</label><input type="text" name="help_text">
+  <button type="submit">Add field</button>
+</form>
+{% endblock %}
