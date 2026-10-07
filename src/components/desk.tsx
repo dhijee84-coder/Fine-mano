@@ -106,7 +106,6 @@ const TONE: Record<string, "default" | "success" | "warn" | "danger" | "primary"
   PARSED: "success",
   UNMATCHED: "warn",
   MANUAL: "default",
-  SMS: "primary",
   BANK: "navy",
   SUCCESS: "success",
   ERROR: "danger",

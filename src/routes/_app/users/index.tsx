@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/desk";
 import { Button } from "@/components/kit";
 import { DataTable, Td, StatusBadge, Forbidden } from "@/components/desk";
 import { useAppStore } from "@/lib/store";
-import { useHas } from "@/lib/session";
+import { useHas, useSessionUser } from "@/lib/session";
 import { ROLE_LABELS } from "@/lib/permissions";
 import { formatDate } from "@/lib/format";
 
@@ -15,6 +15,8 @@ function UsersPage() {
   const canView = useHas("users.view");
   const canCreate = useHas("users.create");
   const canDisable = useHas("users.delete");
+  const actor = useSessionUser();
+  const house = actor?.role === "SUPER_ADMIN";
   const users = useAppStore((s) => s.users);
   const members = useAppStore((s) => s.members);
   const disableUser = useAppStore((s) => s.disableUser);
@@ -27,13 +29,19 @@ function UsersPage() {
       <PageHeader
         kicker="Access"
         title="Users"
-        description="Desk logins. A Member account must be linked to one subscriber — that is how they open their own chits."
+        description={
+          house
+            ? "House, floor, and member portal logins."
+            : canCreate
+              ? "Add a floor Admin or a member portal login. Super Admin cannot be added from this desk."
+              : "Desk logins."
+        }
         actions={
           canCreate ? (
             <Button asChild>
               <Link to="/users/new">
                 <Plus className="size-4" />
-                New user
+                {house ? "New login" : "Add Admin or Member"}
               </Link>
             </Button>
           ) : null

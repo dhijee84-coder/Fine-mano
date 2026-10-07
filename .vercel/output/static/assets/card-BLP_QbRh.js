@@ -1,1 +1,0 @@
-import{g as e,h as t}from"./store-DvFXNCdf.js";import{l as n}from"./session-C-jFiQg7.js";e();var r=t();function i({className:e,...t}){return(0,r.jsx)(`div`,{className:n(`rounded-xl bg-surface p-5 hairline`,e),...t})}function a({className:e,...t}){return(0,r.jsx)(`h3`,{className:n(`font-display text-lg font-medium tracking-tight text-ink`,e),...t})}export{a as n,i as t};

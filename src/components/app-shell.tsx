@@ -51,6 +51,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const canReports = useHas("reports.view");
   const canUsers = useHas("users.view");
   const canAudit = useHas("audit.view");
+  const canDev = useHas("developer.view");
   const unreadAlerts = useAppStore(
     (s) => (s.alerts ?? []).filter((a) => a.userId === user?.id && !a.read).length,
   );
@@ -61,7 +62,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     { to: "/chits", label: "Chits", icon: Layers, show: canChits },
     { to: "/payments", label: "Payments", icon: IndianRupee, show: canPayments },
     { to: "/reports", label: "Reports", icon: BarChart3, show: canReports },
-    { to: "/users", label: "Users", icon: Shield, show: canUsers },
+    { to: "/users", label: "Users", icon: Shield, show: canUsers && user?.role !== "MEMBER" },
     { to: "/house", label: "House book", icon: Database, show: user?.role === "SUPER_ADMIN" },
     { to: "/roles", label: "Roles", icon: BookOpen, show: user?.role === "SUPER_ADMIN" },
     { to: "/audit", label: "Audit log", icon: ScrollText, show: canAudit },
@@ -233,7 +234,11 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const hydrated = useAppStore((s) => s.hasHydrated);
   const user = useSessionUser();
   if (!hydrated) {
-    return <div className="min-h-dvh bg-bg" aria-busy="true" />;
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-bg">
+        <p className="text-sm text-muted">Sign in</p>
+      </div>
+    );
   }
   if (!user) return <Navigate to="/" />;
   if (!user.isActive) {

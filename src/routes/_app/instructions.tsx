@@ -12,29 +12,52 @@ export const Route = createFileRoute("/_app/instructions")({ component: Instruct
 
 type DeskFilter = "ALL" | RoleName;
 
-const TOC = [
-  { id: "desks", label: "Three desks" },
-  { id: "matrix", label: "Who can do what" },
-  { id: "signin", label: "Sign in" },
-  { id: "screens", label: "Screens" },
-  { id: "money", label: "How money moves" },
-  { id: "processes", label: "Playbooks" },
-  { id: "seed", label: "Seed book" },
-  { id: "developer", label: "Developer console" },
-  { id: "glossary", label: "Status glossary" },
-] as const;
-
 function InstructionsPage() {
   const user = useSessionUser();
-  const [filter, setFilter] = useState<DeskFilter>("ALL");
-  const role = user?.role ?? "ADMIN";
+  const role = user?.role ?? "MEMBER";
+  const [filter, setFilter] = useState<DeskFilter>(role === "SUPER_ADMIN" ? "ALL" : role);
+
+  function show(keys: RoleName[]) {
+    if (role === "SUPER_ADMIN") {
+      if (filter === "ALL") return true;
+      return keys.includes(filter);
+    }
+    if (role === "ADMIN") return keys.includes("ADMIN") || keys.includes("MEMBER");
+    return keys.includes("MEMBER");
+  }
+
+  function showLogin(desk: RoleName) {
+    if (role === "SUPER_ADMIN") return filter === "ALL" || filter === desk;
+    if (role === "ADMIN") return desk === "ADMIN" || desk === "MEMBER";
+    return desk === "MEMBER";
+  }
+
+  const toc = [
+    { id: "desks", label: role === "MEMBER" ? "Your desk" : "Desks & logins", show: true },
+    { id: "matrix", label: "Who can do what", show: show(["SUPER_ADMIN", "ADMIN"]) },
+    { id: "signin", label: "Sign in", show: true },
+    { id: role === "MEMBER" ? "member-screens" : "screens", label: "Screens", show: true },
+    { id: "money", label: "How money moves", show: show(["SUPER_ADMIN", "ADMIN"]) },
+    { id: "processes", label: "Playbooks", show: true },
+    { id: "seed", label: "Seed book", show: show(["SUPER_ADMIN", "ADMIN"]) },
+    { id: "developer", label: "Developer console", show: show(["SUPER_ADMIN"]) },
+    { id: "glossary", label: "Status glossary", show: show(["SUPER_ADMIN", "ADMIN"]) },
+  ].filter((t) => t.show);
+
+  const chips: DeskFilter[] = role === "SUPER_ADMIN" ? ["ALL", "SUPER_ADMIN", "ADMIN", "MEMBER"] : [];
 
   return (
     <div className="enter mx-auto max-w-4xl">
       <PageHeader
         kicker="Desk manual"
         title="How Nidhi works"
-        description="Every screen, process, and role control on this desk. Filter by desk or read the whole book."
+        description={
+          role === "SUPER_ADMIN"
+            ? "Every screen, process, and login for all three desks."
+            : role === "ADMIN"
+              ? "Floor desk plus the member portal — Super Admin house chapters are hidden."
+              : "Your own book only: sign in, dashboard, profile, and dues."
+        }
       />
 
       <Card className="mb-6">
@@ -43,22 +66,24 @@ function InstructionsPage() {
         <p className="mt-2 max-w-xl text-sm text-muted">{deskBlurb(role)}</p>
       </Card>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        {(["ALL", "SUPER_ADMIN", "ADMIN", "MEMBER"] as DeskFilter[]).map((key) => (
-          <Button
-            key={key}
-            type="button"
-            size="sm"
-            variant={filter === key ? "navy" : "outline"}
-            onClick={() => setFilter(key)}
-          >
-            {key === "ALL" ? "All desks" : ROLE_LABELS[key]}
-          </Button>
-        ))}
-      </div>
+      {chips.length > 0 ? (
+        <div className="mb-6 flex flex-wrap gap-2">
+          {chips.map((key) => (
+            <Button
+              key={key}
+              type="button"
+              size="sm"
+              variant={filter === key ? "navy" : "outline"}
+              onClick={() => setFilter(key)}
+            >
+              {key === "ALL" ? "All desks" : ROLE_LABELS[key]}
+            </Button>
+          ))}
+        </div>
+      ) : null}
 
       <nav className="mb-8 grid gap-2 sm:grid-cols-3">
-        {TOC.map((item) => (
+        {toc.map((item) => (
           <button
             key={item.id}
             type="button"
@@ -70,58 +95,83 @@ function InstructionsPage() {
         ))}
       </nav>
 
-      <Section id="desks" title="Three desks">
+      <Section id="desks" title={role === "MEMBER" ? "Your login" : "Desks & logins"}>
         <p className="mb-4 text-sm text-muted">
-          Seven old roles were merged into three. Demo password matches the username.
+          {role === "SUPER_ADMIN"
+            ? "All three desks. Demo password matches the username."
+            : role === "ADMIN"
+              ? "Your floor login and the member portal login. Super Admin credentials stay on the house desk."
+              : "Sign in with the User ID issued on your member record. Password matches the username unless you reset it."}
         </p>
-        <DataTable headers={["Desk", "Username", "Sees", "Does"]}>
-          <tr>
-            <Td className="font-medium">Super Admin</Td>
-            <Td className="font-mono text-xs">superadmin</Td>
-            <Td>Whole ledger + developer console</Td>
-            <Td>Users, roles, modules, finance, audit, approvals</Td>
-          </tr>
-          <tr>
-            <Td className="font-medium">Admin</Td>
-            <Td className="font-mono text-xs">admin</Td>
-            <Td>Whole subscriber book</Td>
-            <Td>Members, schemes, collections, allocation, reports</Td>
-          </tr>
-          <tr>
-            <Td className="font-medium">Member</Td>
-            <Td className="font-mono text-xs">member</Td>
-            <Td>Lakshmi Iyer only</Td>
-            <Td>Own chits, dues, receipts. Nothing else</Td>
-          </tr>
+        <DataTable headers={["Desk", "Username", "Password", "Sees"]}>
+          {showLogin("SUPER_ADMIN") ? (
+            <tr>
+              <Td className="font-medium">Super Admin</Td>
+              <Td className="font-mono text-xs">superadmin</Td>
+              <Td className="font-mono text-xs">superadmin</Td>
+              <Td>Whole ledger + developer console</Td>
+            </tr>
+          ) : null}
+          {showLogin("ADMIN") ? (
+            <tr>
+              <Td className="font-medium">Admin</Td>
+              <Td className="font-mono text-xs">admin</Td>
+              <Td className="font-mono text-xs">admin</Td>
+              <Td>Whole subscriber book</Td>
+            </tr>
+          ) : null}
+          {showLogin("MEMBER") ? (
+            <tr>
+              <Td className="font-medium">Member</Td>
+              <Td className="font-mono text-xs">member</Td>
+              <Td className="font-mono text-xs">member</Td>
+              <Td>Lakshmi Iyer only</Td>
+            </tr>
+          ) : null}
         </DataTable>
-        <p className="mt-4 text-sm text-muted">
-          Access is role defaults ± per-user overrides, then modules. Super Admin always has every permission and cannot be reduced. Denied actions are written to the audit log.
-        </p>
+        {show(["SUPER_ADMIN", "ADMIN"]) ? (
+          <p className="mt-4 text-sm text-muted">
+            Access is role defaults ± per-user overrides, then modules. Super Admin always has every permission and cannot be reduced.
+            Admin can create Admin and Member logins only — never Super Admin. Members have no Users menu.
+          </p>
+        ) : (
+          <p className="mt-4 text-sm text-muted">
+            Forgot the password? Use “reset password with mobile” on the sign-in page with the number on your member record.
+          </p>
+        )}
       </Section>
 
-      <Section id="matrix" title="Who can do what">
-        <DataTable
-          headers={["Capability", "Super Admin", "Admin", "Member"]}
-        >
-          {MATRIX.map((row) => (
-            <tr key={row.cap}>
-              <Td className="font-medium">{row.cap}</Td>
-              <Td>
-                <Mark on={row.super} />
-              </Td>
-              <Td>
-                <Mark on={row.admin} />
-              </Td>
-              <Td>
-                <Mark on={row.member} />
-              </Td>
-            </tr>
-          ))}
-        </DataTable>
-        <p className="mt-4 text-sm text-muted">
-          Direct URLs still check permissions. A Member opening /members or /payments sees Access denied — the menu is not the only gate.
-        </p>
-      </Section>
+      {show(["SUPER_ADMIN", "ADMIN"]) ? (
+        <Section id="matrix" title="Who can do what">
+          <DataTable
+            headers={
+              role === "SUPER_ADMIN"
+                ? ["Capability", "Super Admin", "Admin", "Member"]
+                : ["Capability", "Admin", "Member"]
+            }
+          >
+            {MATRIX.map((row) => (
+              <tr key={row.cap}>
+                <Td className="font-medium">{row.cap}</Td>
+                {role === "SUPER_ADMIN" ? (
+                  <Td>
+                    <Mark on={row.super} />
+                  </Td>
+                ) : null}
+                <Td>
+                  <Mark on={row.admin} />
+                </Td>
+                <Td>
+                  <Mark on={row.member} />
+                </Td>
+              </tr>
+            ))}
+          </DataTable>
+          <p className="mt-4 text-sm text-muted">
+            Direct URLs still check permissions. A Member opening /members or /payments sees Access denied — the menu is not the only gate.
+          </p>
+        </Section>
+      ) : null}
 
       <Section id="signin" title="Sign in">
         <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-ink-soft">
@@ -136,7 +186,7 @@ function InstructionsPage() {
         </p>
       </Section>
 
-      {show(filter, ["ALL", "SUPER_ADMIN", "ADMIN"]) ? (
+      {show(["SUPER_ADMIN", "ADMIN"]) ? (
         <Section id="screens" title="Screens — house and floor">
           <ScreenBlock
             title="Dashboard"
@@ -152,11 +202,11 @@ function InstructionsPage() {
           />
           <ScreenBlock
             title="Payments"
-            body="Sources: MANUAL, SMS, BANK. Record lands PENDING. Approve, then Allocate onto an installment. A full hit marks the installment PAID and locks it. Super Admin can reverse a payment with a reason."
+            body="Sources: MANUAL and BANK. Record lands PENDING. Approve, then Allocate onto an installment. A full hit marks the installment PAID and locks it. Super Admin can reverse a payment with a reason."
           />
           <ScreenBlock
             title="Unmatched"
-            body="SMS/bank credits that did not match a subscriber. Match creates a PENDING payment on the chosen book. Ignore closes without a payment. The Payments badge counts open unmatched rows."
+            body="Bank credits that did not match a subscriber. Match creates a PENDING payment on the chosen book. Ignore closes without a payment. The Payments badge counts open unmatched rows."
           />
           <ScreenBlock
             title="Reports"
@@ -169,7 +219,7 @@ function InstructionsPage() {
         </Section>
       ) : null}
 
-      {show(filter, ["ALL", "MEMBER"]) ? (
+      {show(["MEMBER"]) ? (
         <Section id="member-screens" title="Screens — own book">
           <ScreenBlock
             title="Dashboard"
@@ -182,7 +232,7 @@ function InstructionsPage() {
         </Section>
       ) : null}
 
-      {show(filter, ["ALL", "SUPER_ADMIN"]) ? (
+      {show(["SUPER_ADMIN"]) ? (
         <Section id="house-only" title="House-only screens">
           <ScreenBlock
             title="Roles"
@@ -195,10 +245,11 @@ function InstructionsPage() {
         </Section>
       ) : null}
 
-      <Section id="money" title="How money moves">
+      {show(["SUPER_ADMIN", "ADMIN"]) ? (
+        <Section id="money" title="How money moves">
         <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-ink-soft">
           <li>
-            A receipt is recorded against a member (manual form, matched unmatched row, or mock bank/SMS). Status: PENDING.
+            A receipt is recorded against a member (manual form, matched unmatched row, or bank API). Status: PENDING.
           </li>
           <li>Approve → APPROVED. Still not applied to a month.</li>
           <li>
@@ -213,9 +264,10 @@ function InstructionsPage() {
           ))}
         </div>
       </Section>
+      ) : null}
 
       <Section id="processes" title="Playbooks">
-        {show(filter, ["ALL", "SUPER_ADMIN", "ADMIN"]) ? (
+        {show(["SUPER_ADMIN", "ADMIN"]) ? (
           <>
             <Play
               title="A. New subscriber on a live chit"
@@ -229,13 +281,14 @@ function InstructionsPage() {
               title="B. Collect cash / cheque / UPI"
               steps={[
                 "Payments → Record payment (or Floor desk → Record payment).",
+                "Pick the scheme, then a live subscriber enrolled in it. Amount defaults to the installment.",
                 "Payment is PENDING.",
                 "Approve it.",
                 "Allocate to the right installment. Partial → PARTIAL. Full → PAID and locked.",
               ]}
             />
             <Play
-              title="C. SMS or bank credit with no member"
+              title="C. Bank credit with no member"
               steps={[
                 "Open Unmatched from the Payments badge or the unmatched chip.",
                 "Match → pick the subscriber → creates a PENDING payment.",
@@ -252,7 +305,7 @@ function InstructionsPage() {
             />
           </>
         ) : null}
-        {show(filter, ["ALL", "SUPER_ADMIN"]) ? (
+        {show(["SUPER_ADMIN"]) ? (
           <>
             <Play
               title="E. Dangerous action"
@@ -271,18 +324,19 @@ function InstructionsPage() {
             />
           </>
         ) : null}
-        {show(filter, ["ALL", "MEMBER"]) ? (
+        {show(["MEMBER"]) ? (
           <Play
             title="Member: read your own book"
             steps={[
               "Dashboard shows your enrollments, next due, overdue, and receipts.",
               "Open My profile for contact details.",
-              "There is no Members, Payments, or Reports menu. Those URLs are denied.",
+              "There is no Members, Payments, Reports, or Users menu. Those URLs are denied.",
             ]}
           />
         ) : null}
       </Section>
 
+      {show(["SUPER_ADMIN", "ADMIN"]) ? (
       <Section id="seed" title="Seed book">
         <p className="mb-3 text-sm text-muted">What you see on first open.</p>
         <DataTable headers={["Scheme", "Corpus", "Installment", "Tenure", "Schedule"]}>
@@ -312,8 +366,9 @@ function InstructionsPage() {
           Subscribers: Lakshmi Iyer, Ramesh Krishnan, Fatima Begum, Arjun Reddy, Meena Subramanian, Joseph D'Souza, Priya Nair, Venkatesh Rao. The Member login is Lakshmi Iyer. Two unmatched receipts sit open so reconciliation can be practised.
         </p>
       </Section>
+      ) : null}
 
-      {show(filter, ["ALL", "SUPER_ADMIN"]) ? (
+      {show(["SUPER_ADMIN"]) ? (
         <Section id="developer" title="Developer console">
           <p className="mb-4 text-sm text-muted">
             Super Admin only. Disabling a module blocks its routes, not just the menu. Financial records stay on this desk because Super Admin and Developer were merged.
@@ -331,6 +386,7 @@ function InstructionsPage() {
         <div id="developer" />
       )}
 
+      {show(["SUPER_ADMIN", "ADMIN"]) ? (
       <Section id="glossary" title="Status glossary">
         <dl className="grid gap-3 sm:grid-cols-2">
           <Gloss term="Scheme" value="ACTIVE / CLOSED / DRAFT" />
@@ -339,29 +395,25 @@ function InstructionsPage() {
           <Gloss term="Payment" value="PENDING / APPROVED / ALLOCATED / REVERSED" />
           <Gloss term="Unmatched" value="OPEN / RESOLVED / IGNORED" />
           <Gloss term="Dangerous action" value="PENDING / APPROVED / REJECTED / EXECUTED" />
-          <Gloss term="SMS device" value="PENDING / APPROVED / DISABLED" />
           <Gloss term="Money" value="Indian Rupees, en-IN · Asia/Kolkata" />
         </dl>
         <p className="mt-6 text-sm text-muted">
-          Nidhi is an operations desk, not a bank. No live SMS gateway, no live bank credentials, no money movement. The reminder scheduler is a queue, not a running job.
+          Nidhi is an operations desk, not a bank. Collections are Manual or Bank API. Alerts are in-app (and optional browser). No SMS collector.
         </p>
       </Section>
+      ) : null}
     </div>
   );
 }
 
 function deskBlurb(role: RoleName) {
   if (role === "SUPER_ADMIN") {
-    return "House desk. Users, finance, modules, APIs, and approvals live here. Use the filter to read the floor or member chapters too.";
+    return "House desk. Users, finance, modules, APIs, and approvals live here. Use the filter to read the floor or member chapters too. All three logins are listed above.";
   }
   if (role === "ADMIN") {
-    return "Floor desk. Members, schemes, collections, and allocation. Super Admin extras (developer, roles, audit) are hidden from this login.";
+    return "Floor desk. Members, schemes, collections, and allocation. You can add Admin and Member users only — Super Admin is not on that list. Member portal chapters are included below.";
   }
-  return "Your own chits, dues, and receipts. Nobody else’s book. Use All desks if you want to read how the house and floor work.";
-}
-
-function show(filter: DeskFilter, keys: DeskFilter[]) {
-  return keys.includes(filter);
+  return "Your own chits, dues, and receipts. Nobody else’s book. There is no Users menu on this login.";
 }
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
@@ -438,8 +490,7 @@ const DEV_SECTIONS = [
   { name: "Menu builder", body: "Extra nav items gated by a permission code." },
   { name: "Workflows", body: "JSON config for approval, unmatched, reminders, bank sync. No code exec." },
   { name: "API clients", body: "Create clients. Secrets hashed at rest and always masked." },
-  { name: "SMS devices", body: "Approve or disable collector devices." },
-  { name: "Bank providers", body: "Mock adapter until live credentials exist. Mock sync pulls sample credits." },
+  { name: "Bank providers", body: "Mock adapter until live credentials exist. Mock sync pulls sample credits. This is the automatic collection path." },
   { name: "Database inspector", body: "Allow-listed tables only. No arbitrary SQL." },
   { name: "Dangerous actions", body: "Restore / write queue. Super Admin approves or rejects." },
   { name: "Monitoring", body: "System log, backups, scheduler slot." },

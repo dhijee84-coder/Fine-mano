@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-{% block title %}Auditor Dashboard{% endblock %}
-{% block content %}
-<h2>Auditor Dashboard (read-only)</h2>
-<div class="card-grid">
-  <div class="card"><h3>Members</h3><a href="{{ url_for("members.list_members") }}">View</a></div>
-  <div class="card"><h3>Payments</h3><a href="{{ url_for("payments.list_payments") }}">View</a></div>
-</div>
-{% endblock %}

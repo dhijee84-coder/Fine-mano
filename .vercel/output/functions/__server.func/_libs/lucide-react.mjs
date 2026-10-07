@@ -647,24 +647,6 @@ var Skull = createLucideIcon("skull", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
-var Smartphone = createLucideIcon("smartphone", [["rect", {
-	width: "14",
-	height: "20",
-	x: "5",
-	y: "2",
-	rx: "2",
-	ry: "2",
-	key: "1yt0o3"
-}], ["path", {
-	d: "M12 18h.01",
-	key: "mhygvu"
-}]]);
-/**
-* @license lucide-react v0.510.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
 var Terminal = createLucideIcon("terminal", [["polyline", {
 	points: "4 17 10 11 4 5",
 	key: "akl6gq"
@@ -750,4 +732,4 @@ var X = createLucideIcon("x", [["path", {
 	key: "d8bk6v"
 }]]);
 //#endregion
-export { Activity as A, CircleHelp as C, BookOpen as D, Boxes as E, Bell as O, Database as S, ChartColumn as T, Layers as _, Terminal as a, IndianRupee as b, Shield as c, ScrollText as d, RectangleEllipsis as f, LayoutDashboard as g, LogOut as h, TriangleAlert as i, ArrowRight as k, ShieldOff as l, Menu as m, Users as n, Smartphone as o, Plus as p, UserRound as r, Skull as s, X as t, Settings as u, Landmark as v, CircleAlert as w, GitBranch as x, KeyRound as y };
+export { CircleAlert as C, Bell as D, BookOpen as E, ArrowRight as O, CircleHelp as S, Boxes as T, Landmark as _, Terminal as a, GitBranch as b, ShieldOff as c, RectangleEllipsis as d, Plus as f, Layers as g, LayoutDashboard as h, TriangleAlert as i, Activity as k, Settings as l, LogOut as m, Users as n, Skull as o, Menu as p, UserRound as r, Shield as s, X as t, ScrollText as u, KeyRound as v, ChartColumn as w, Database as x, IndianRupee as y };

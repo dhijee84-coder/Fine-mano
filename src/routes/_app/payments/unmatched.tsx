@@ -31,7 +31,7 @@ function UnmatchedPage() {
       <PageHeader
         kicker="Reconciliation"
         title="Unmatched receipts"
-        description="SMS and bank credits that could not be matched to a subscriber. Resolve by attaching a member, or ignore."
+        description="Bank credits that could not be matched to a subscriber. Resolve by attaching a member, or ignore."
       />
       {open.length === 0 ? (
         <EmptyState title="Queue is clear" description="No open unmatched receipts." />

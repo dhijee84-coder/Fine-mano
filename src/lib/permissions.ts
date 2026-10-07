@@ -8,6 +8,12 @@ export const ROLE_LABELS: Record<RoleName, string> = {
   MEMBER: "Member",
 };
 
+export function assignableRoles(actor: RoleName | null | undefined): RoleName[] {
+  if (actor === "SUPER_ADMIN") return ["SUPER_ADMIN", "ADMIN", "MEMBER"];
+  if (actor === "ADMIN") return ["ADMIN", "MEMBER"];
+  return [];
+}
+
 export const ROLE_BLURBS: Record<RoleName, string> = {
   SUPER_ADMIN: "House desk — users, finance, modules, APIs, and approvals in one place.",
   ADMIN: "Floor desk — members, schemes, collections, allocation, and reports.",
@@ -47,11 +53,6 @@ export const PERMISSIONS: Record<string, [string, string, boolean, boolean]> = {
   "payments.approve": ["payments", "Approve unmatched/pending payments", true, false],
   "payments.allocate": ["payments", "Allocate payments to installments", true, false],
   "payments.refund": ["payments", "Process refunds", true, true],
-  "sms.view": ["sms", "View SMS transactions", false, false],
-  "sms.process": ["sms", "Process parsed SMS transactions", true, false],
-  "sms.reprocess": ["sms", "Reprocess failed SMS transactions", true, false],
-  "sms.manage_devices": ["sms", "Register/approve/disable SMS devices", false, false],
-  "sms.configure_parsers": ["sms", "Configure SMS bank parsers", false, false],
   "bank.view": ["bank", "View bank transactions", true, false],
   "bank.connect": ["bank", "Create bank connections", false, true],
   "bank.sync": ["bank", "Trigger bank synchronization", false, false],
@@ -113,8 +114,6 @@ export const ROLE_DEFAULTS: Record<RoleName, string[]> = {
     "payments.edit",
     "payments.approve",
     "payments.allocate",
-    "sms.view",
-    "sms.process",
     "bank.view",
     "bank.sync",
     "reports.view",
@@ -151,7 +150,7 @@ export const ADMIN_SCREENS: { key: string; label: string; hint: string; codes: s
   { key: "reports", label: "Reports", hint: "Collections and overdue", codes: ["reports.view", "reports.export", "reconciliation.view"] },
   { key: "users", label: "Users", hint: "Desk logins", codes: ["users.view", "users.create", "users.edit"] },
   { key: "audit", label: "Audit log", hint: "Who changed what", codes: ["audit.view"] },
-  { key: "reminders", label: "SMS / reminders", hint: "Send and view reminder queue", codes: ["reminders.view", "reminders.send", "reminders.create", "sms.view"] },
+  { key: "reminders", label: "Reminders", hint: "Send and view reminder queue", codes: ["reminders.view", "reminders.send", "reminders.create"] },
 ];
 
 export const MODULE_KEYS = [
@@ -159,7 +158,6 @@ export const MODULE_KEYS = [
   "chit_management",
   "installments",
   "payments",
-  "sms_collector",
   "bank_api",
   "manual_payments",
   "payment_allocation",
@@ -179,7 +177,6 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   chit_management: "Chit schemes",
   installments: "Installments",
   payments: "Payments",
-  sms_collector: "SMS collector",
   bank_api: "Bank API",
   manual_payments: "Manual payments",
   payment_allocation: "Payment allocation",

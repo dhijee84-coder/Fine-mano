@@ -1,6 +1,6 @@
 # Nidhi — complete desk manual
 
-Nidhi is a **chit fund operations desk**. It keeps subscribers, schemes, monthly dues, collections (cash / SMS / bank), allocation to installments, unmatched receipts, reports, users, and a developer console in one place.
+Nidhi is a **chit fund operations desk**. It keeps subscribers, schemes, monthly dues, collections (**manual** and **bank API**), allocation to installments, unmatched receipts, reports, users, and a developer console in one place.
 
 This file is the full instruction set: what each screen does, how money moves, and what each role is allowed to touch.
 
@@ -51,7 +51,7 @@ Can do everything the Admin can, plus:
 - Create / disable users, change roles, promote to Super Admin
 - Per-user permission overrides (grant or revoke)
 - Edit role default grants (not Super Admin’s own set)
-- Open the developer console (modules, settings, APIs, SMS devices, bank, database inspector, dangerous actions, monitoring)
+- Open the developer console (modules, settings, APIs, bank, database inspector, dangerous actions, monitoring)
 - Approve or reject dangerous actions
 - Soft-delete members and payments (reason required)
 - View and export the audit log
@@ -70,9 +70,9 @@ Can:
 - Record payments (they land **PENDING**)
 - Approve pending payments
 - Allocate a payment onto an installment (marks the installment PAID or PARTIAL; fully paid rows lock)
-- Match or ignore unmatched SMS/bank receipts
+- Match or ignore unmatched bank receipts
 - View reports (source mix, scheme due vs collected)
-- View and create users at Admin or Member (cannot promote to Super Admin)
+- View and create users at Admin or Member (the Super Admin role is not on the form)
 
 Cannot:
 
@@ -82,7 +82,7 @@ Cannot:
 
 ### Member — own book
 
-**Menu:** Dashboard, My profile, Instructions.
+**Menu:** Dashboard, Alerts, My profile, Instructions (own-book chapter only — no house or floor playbooks).
 
 **Dashboard (“My chit fund”)** is Lakshmi Iyer in the seed: total paid, active chits, overdue, next due, enrolled schemes, installment rows, payment history.
 
@@ -133,7 +133,7 @@ A scheme has corpus, monthly installment, tenure, start date, status.
 
 ### Payments
 
-Every receipt has a source: `MANUAL`, `SMS`, or `BANK`. Status:
+Every receipt has a source: `MANUAL` or `BANK`. Status:
 
 | Status | Meaning |
 |---|---|
@@ -142,7 +142,7 @@ Every receipt has a source: `MANUAL`, `SMS`, or `BANK`. Status:
 | ALLOCATED | Applied to one or more installment rows |
 | REVERSED | Soft-deleted; reason required |
 
-**Record payment** — pick a member, amount, reference. Lands PENDING.
+**Record payment** — pick the **scheme** first, then a **live subscriber enrolled in that scheme**, amount, reference. Lands PENDING.
 
 **Approve** — PENDING → APPROVED.
 
@@ -152,7 +152,7 @@ Every receipt has a source: `MANUAL`, `SMS`, or `BANK`. Status:
 
 ### Unmatched receipts
 
-SMS and bank credits that did not match a subscriber.
+Bank credits that did not match a subscriber.
 
 - **Match** — attach a member; creates a PENDING payment on that book; unmatched row closes.
 - **Ignore** — close without creating a payment.
@@ -161,7 +161,7 @@ The Payments badge and the unmatched chip count **open** unmatched rows.
 
 ### Reports
 
-Booked collections, pending receipts, overdue outstanding, subscriber count, source mix (MANUAL / SMS / BANK), and per-scheme enrolled / due / collected / gap.
+Booked collections, pending receipts, overdue outstanding, subscriber count, source mix (MANUAL / BANK), and per-scheme enrolled / due / collected / gap.
 
 ### Users (Admin + Super Admin)
 
@@ -189,8 +189,7 @@ Own contact and enrollments.
 | Menu builder | Extra nav items gated by a permission code |
 | Workflows | JSON config (approval, unmatched, reminders, bank sync). No code exec |
 | API clients | Create clients; secrets hashed at rest and always masked |
-| SMS devices | Approve or disable collector devices |
-| Bank providers | Mock adapter until live credentials exist; **Mock sync** pulls sample credits |
+| Bank providers | Mock adapter until live credentials exist; **Mock sync** pulls sample credits. This is the automatic collection path |
 | Database inspector | Allow-listed tables only. No arbitrary SQL |
 | Dangerous actions | Queue (restore, write ops). Super Admin approves or rejects |
 | Monitoring | System log, backups, scheduler slot |
@@ -216,11 +215,12 @@ Open **Instructions** in the sidebar on any desk. Same content as this file, lai
 ### B. Collect a cash / cheque / UPI receipt
 
 1. Payments → **Record payment** (or Dashboard → Record payment on the floor desk).
-2. Payment is **PENDING**.
+2. Choose the **chit scheme**, then a member still **active in that scheme** (deleted or closed enrollments do not appear). Amount defaults to the scheme installment.
+3. Payment is **PENDING**.
 3. **Approve** it.
 4. **Allocate** to the oldest unpaid installment (or a specific month). Partial amounts mark PARTIAL; a full hit marks PAID and locks the row.
 
-### C. SMS or bank credit with no member
+### C. Bank credit with no member
 
 1. Payments badge / **Unmatched** chip.
 2. **Match** → pick the subscriber → **Create payment** (PENDING on that member).
@@ -255,7 +255,7 @@ Members and payments are never hard-deleted. Super Admin supplies a **reason**. 
 
 **Member login** is linked to Lakshmi Iyer (`m-1`).
 
-**Unmatched:** two open sample receipts (SMS and bank) so reconciliation can be practised.
+**Unmatched:** two open sample bank receipts so reconciliation can be practised.
 
 ---
 
@@ -267,7 +267,6 @@ Members and payments are never hard-deleted. Super Admin supplies a **reason**. 
 **Payment:** PENDING / APPROVED / ALLOCATED / REVERSED  
 **Unmatched:** OPEN / RESOLVED / IGNORED  
 **Dangerous action:** PENDING / APPROVED / REJECTED / EXECUTED  
-**SMS device:** PENDING / APPROVED / DISABLED  
 
 Money is Indian Rupees, formatted `en-IN` (₹1,01,670). Dates follow the desk locale (Asia/Kolkata).
 
@@ -275,7 +274,7 @@ Money is Indian Rupees, formatted `en-IN` (₹1,01,670). Dates follow the desk l
 
 ## 8. What this desk does not do
 
-- It is **not a bank**. No real SMS gateway, no live bank credentials, no money movement.
+- It is **not a bank**. No live bank credentials in this cut, no money movement. Collections are Manual or Bank API. Alerts are in-app.
 - There is no multi-device cloud save. The book is this browser’s ledger.
 - Export of reports/audit is described in permissions but not a file download in this cut.
 - The reminder scheduler is a queue, not a running job.
@@ -286,9 +285,9 @@ Money is Indian Rupees, formatted `en-IN` (₹1,01,670). Dates follow the desk l
 
 Member has `receipts.view` only. Admin has the floor set below. Super Admin has every code.
 
-Admin grants: `members.view`, `members.view_all`, `members.create`, `members.edit`, `members.export`, `chits.view`, `chits.create`, `chits.edit`, `installments.view`, `installments.create`, `installments.generate`, `installments.edit`, `payments.view`, `payments.create`, `payments.edit`, `payments.approve`, `payments.allocate`, `sms.view`, `sms.process`, `bank.view`, `bank.sync`, `reports.view`, `reports.export`, `reminders.view`, `reminders.create`, `reminders.edit`, `reminders.send`, `reconciliation.view`, `receipts.view`, `users.view`, `users.create`, `users.edit`.
+Admin grants: `members.view`, `members.view_all`, `members.create`, `members.edit`, `members.export`, `chits.view`, `chits.create`, `chits.edit`, `installments.view`, `installments.create`, `installments.generate`, `installments.edit`, `payments.view`, `payments.create`, `payments.edit`, `payments.approve`, `payments.allocate`, `bank.view`, `bank.sync`, `reports.view`, `reports.export`, `reminders.view`, `reminders.create`, `reminders.edit`, `reminders.send`, `reconciliation.view`, `receipts.view`, `users.view`, `users.create`, `users.edit`.
 
-Super Admin extras (dangerous or house-only): user delete / assign roles / assign superadmin / reset password / manage permissions, member delete, chit delete, installment edit-paid, payment delete / refund, SMS device and parser admin, bank connect / providers / credentials, all `developer.*` codes, audit view/export, settings.security, settings.branding.
+Super Admin extras (dangerous or house-only): user delete / assign roles / assign superadmin / reset password / manage permissions, member delete, chit delete, installment edit-paid, payment delete / refund, bank connect / providers / credentials, all `developer.*` codes, audit view/export, settings.security, settings.branding.
 
 ---
 

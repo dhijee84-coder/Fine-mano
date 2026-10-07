@@ -20,7 +20,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  if (user) return <Navigate to="/dashboard" />;
+  if (hydrated && user) return <Navigate to="/dashboard" />;
 
   function enter(name: string) {
     const res = loginAs(name);
@@ -87,9 +87,8 @@ function LoginPage() {
               <button
                 key={a.username}
                 type="button"
-                disabled={!hydrated}
                 onClick={() => enter(a.username)}
-                className="rounded-lg bg-surface p-3.5 text-left hairline transition-[box-shadow] duration-150 hover:shadow-[var(--shadow-card-hover)] disabled:opacity-60"
+                className="rounded-lg bg-surface p-3.5 text-left hairline transition-[box-shadow] duration-150 hover:shadow-[var(--shadow-card-hover)]"
               >
                 <span className="block text-sm font-medium text-ink">{ROLE_LABELS[a.role]}</span>
                 <span className="mt-2 grid grid-cols-[4.5rem_1fr] gap-x-2 gap-y-0.5 font-mono text-[11px]">
@@ -123,8 +122,8 @@ function LoginPage() {
                 />
               </Field>
               {error ? <p className="text-sm text-danger">{error}</p> : null}
-              <Button type="submit" className="mt-1 w-full" disabled={!hydrated}>
-                {hydrated ? "Login" : "Opening ledger…"}
+              <Button type="submit" className="mt-1 w-full">
+                Login
               </Button>
               <Link to="/forgot" className="text-center text-sm text-primary">
                 Member: reset password with mobile

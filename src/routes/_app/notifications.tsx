@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { PageHeader, EmptyState, StatusBadge } from "@/components/desk";
 import { Button, Card } from "@/components/kit";
@@ -10,9 +11,13 @@ export const Route = createFileRoute("/_app/notifications")({ component: AlertsP
 
 function AlertsPage() {
   const user = useSessionUser();
-  const alerts = useAppStore((s) => (s.alerts ?? []).filter((a) => a.userId === user?.id));
+  const raw = useAppStore((s) => s.alerts);
   const mark = useAppStore((s) => s.markAlertRead);
   const markAll = useAppStore((s) => s.markAllAlertsRead);
+  const alerts = useMemo(
+    () => (raw ?? []).filter((a) => a.userId === user?.id),
+    [raw, user?.id],
+  );
   const unread = alerts.filter((a) => !a.read).length;
 
   async function enableWeb() {

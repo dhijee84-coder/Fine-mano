@@ -15,15 +15,14 @@ import type {
   AuditLog,
   ChitInstallment,
   Member,
-  OutboundSms,
   PaymentSource,
-  SmsKind,
   UnmatchedStatus,
   User,
 } from "./types";
 
 export type Store = AppState & {
   hasHydrated: boolean;
+  pendingLogin: { type: "form"; username: string; password: string } | { type: "as"; username: string } | null;
   setHasHydrated: (v: boolean) => void;
   login: (username: string, password: string) => { ok: true } | { ok: false; error: string };
   loginAs: (username: string) => { ok: true } | { ok: false; error: string };
@@ -77,14 +76,11 @@ export type Store = AppState & {
   addMenuItem: (data: { label: string; url: string; icon: string; requiredPermission: string }) => void;
   createApiClient: (name: string, scopes: string) => { ok: true } | { ok: false; error: string };
   revokeApiClient: (id: string) => void;
-  setSmsDeviceStatus: (id: string, status: "APPROVED" | "DISABLED") => void;
   mockBankSync: () => { ok: true; fetched: number };
   requestDangerousAction: (actionType: string, reason: string, payload: string) => { ok: true } | { ok: false; error: string };
   decideAction: (id: string, approve: boolean) => { ok: true } | { ok: false; error: string };
   createBackup: (reason: string) => { ok: true } | { ok: false; error: string };
   sendReminder: (id: string) => void;
-  processSms: (id: string) => { ok: true } | { ok: false; error: string };
-  queueSms: (data: { toPhone: string; memberId?: string | null; kind: SmsKind; body: string; otp?: string }) => { ok: true; id: string; status: OutboundSms["status"]; otp: string };
   notifyAccount: (data: { userId: string; kind: AlertKind; title: string; body: string; href?: string }) => void;
   markAlertRead: (id: string) => void;
   markAllAlertsRead: () => void;
@@ -199,7 +195,16 @@ export const useAppStore = create<Store>()(
       return {
         ...seed,
         hasHydrated: false,
-        setHasHydrated: (v) => set({ hasHydrated: v }),
+        pendingLogin: null,
+        setHasHydrated: (v) => {
+          set({ hasHydrated: v });
+          if (!v) return;
+          const pending = get().pendingLogin;
+          if (!pending) return;
+          set({ pendingLogin: null });
+          if (pending.type === "as") get().loginAs(pending.username);
+          else get().login(pending.username, pending.password);
+        },
         currentUser,
         effectivePermissions,
         hasPermission,
@@ -216,7 +221,10 @@ export const useAppStore = create<Store>()(
         },
 
         login: (username, password) => {
-          if (!get().hasHydrated) return deny("Still opening the ledger.");
+          if (!get().hasHydrated) {
+            set({ pendingLogin: { type: "form", username, password } });
+            return { ok: true };
+          }
           const user = get().users.find(
             (u) => u.username.toLowerCase() === username.trim().toLowerCase(),
           );
@@ -265,7 +273,10 @@ export const useAppStore = create<Store>()(
         },
 
         loginAs: (username) => {
-          if (!get().hasHydrated) return deny("Still opening the ledger.");
+          if (!get().hasHydrated) {
+            set({ pendingLogin: { type: "as", username } });
+            return { ok: true };
+          }
           const user = get().users.find((u) => u.username === username);
           if (!user || !user.isActive) return deny("Account unavailable.");
           set({ sessionUserId: user.id });
@@ -961,12 +972,6 @@ export const useAppStore = create<Store>()(
           });
         },
 
-        setSmsDeviceStatus: (id, status) => {
-          set({
-            smsDevices: get().smsDevices.map((d) => (d.id === id ? { ...d, status } : d)),
-          });
-        },
-
         mockBankSync: () => {
           const fetched = 1;
           set({
@@ -1085,27 +1090,6 @@ export const useAppStore = create<Store>()(
               });
             }
           }
-        },
-
-        queueSms: (data) => {
-          const sid = get().settings.twilio_account_sid?.trim();
-          const token = get().settings.twilio_auth_token?.trim();
-          const from = get().settings.twilio_from_number?.trim();
-          const status: OutboundSms["status"] = sid && token && from ? "QUEUED" : "DEMO";
-          const id = nextId("sms");
-          const row: OutboundSms = {
-            id,
-            toPhone: data.toPhone,
-            memberId: data.memberId ?? null,
-            kind: data.kind,
-            body: data.body,
-            status,
-            provider: "twilio",
-            otp: data.otp ?? "",
-            createdAt: nowISO(),
-          };
-          set({ smsOutbox: [row, ...(get().smsOutbox ?? [])].slice(0, 200) });
-          return { ok: true, id, status, otp: data.otp ?? "" };
         },
 
         notifyAccount: (data) => {
@@ -1258,30 +1242,6 @@ export const useAppStore = create<Store>()(
           return { ok: true, sent };
         },
 
-        processSms: (id) => {
-          const txn = get().smsTxns.find((t) => t.id === id);
-          if (!txn || txn.parsedAmount == null) return deny("Cannot process this SMS.");
-          const umId = nextId("um");
-          set({
-            unmatched: [
-              {
-                id: umId,
-                amount: txn.parsedAmount,
-                source: "SMS",
-                rawReference: txn.rawText.slice(0, 120),
-                receivedAt: nowISO(),
-                status: "OPEN",
-                resolvedPaymentId: null,
-              },
-              ...get().unmatched,
-            ],
-            smsTxns: get().smsTxns.map((t) =>
-              t.id === id ? { ...t, parseStatus: "PARSED" } : t,
-            ),
-          });
-          return { ok: true };
-        },
-
         resetDemo: () => {
           const fresh = createSeedState();
           set({ ...fresh, hasHydrated: true, sessionUserId: null });
@@ -1303,13 +1263,29 @@ export const useAppStore = create<Store>()(
       skipHydration: true,
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;
+        const asLedgerSource = <T extends { source: string }>(row: T): T =>
+          (row as { source: string }).source === "SMS" ? { ...row, source: "BANK" } : row;
+        const payments = (p.payments ?? current.payments).map(asLedgerSource);
+        const unmatched = (p.unmatched ?? current.unmatched).map(asLedgerSource);
+        const reminders = (p.reminders ?? current.reminders).map((r) =>
+          (r as { channel: string }).channel === "SMS" ? { ...r, channel: "IN_APP" as const } : r,
+        );
+        const rolePerms = { ...(p.rolePerms ?? current.rolePerms) };
+        if (rolePerms.ADMIN) {
+          rolePerms.ADMIN = rolePerms.ADMIN.filter((c) => !c.startsWith("sms."));
+        }
         return {
           ...current,
           ...p,
-          smsOutbox: p.smsOutbox ?? current.smsOutbox ?? [],
+          payments,
+          unmatched,
+          reminders,
+          smsDevices: [],
+          smsTxns: [],
+          smsOutbox: [],
           passwordResets: p.passwordResets ?? current.passwordResets ?? [],
           alerts: p.alerts ?? current.alerts ?? [],
-          rolePerms: p.rolePerms ?? current.rolePerms,
+          rolePerms,
           settings: { ...current.settings, ...(p.settings ?? {}) },
         };
       },
@@ -1356,14 +1332,11 @@ export const useAppStore = create<Store>()(
           "addMenuItem",
           "createApiClient",
           "revokeApiClient",
-          "setSmsDeviceStatus",
           "mockBankSync",
           "requestDangerousAction",
           "decideAction",
           "createBackup",
           "sendReminder",
-          "processSms",
-          "queueSms",
           "notifyAccount",
           "markAlertRead",
           "markAllAlertsRead",
@@ -1373,6 +1346,7 @@ export const useAppStore = create<Store>()(
           "sendDueReminders",
           "resetDemo",
           "setHasHydrated",
+          "pendingLogin",
         ]);
         const data: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(rest)) {
@@ -1383,3 +1357,7 @@ export const useAppStore = create<Store>()(
     },
   ),
 );
+
+if (typeof window !== "undefined") {
+  void useAppStore.persist.rehydrate();
+}

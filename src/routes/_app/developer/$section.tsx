@@ -20,8 +20,7 @@ const TITLES: Record<string, [string, string]> = {
   menu: ["Menu builder", "Items hide unless the signed-in user has the required permission."],
   workflows: ["Workflows", "JSON configuration only."],
   api: ["API clients", "Secrets are hashed at rest and always masked in the UI."],
-  sms: ["SMS devices", "Android collector devices wait for approval before ingest."],
-  bank: ["Bank providers", "Mock mode until real credentials are supplied."],
+  bank: ["Bank providers", "Mock mode until live credentials are supplied. Bank API is the only automatic collection path."],
   database: ["Database inspector", "Allow-listed tables. No arbitrary SQL."],
   actions: ["Dangerous actions", "Developer requests; Super Admin decides."],
   monitoring: ["Monitoring", "System log, backups, scheduler slot."],
@@ -53,7 +52,6 @@ function DevSection() {
       {section === "menu" && <MenuPanel />}
       {section === "workflows" && <WorkflowsPanel />}
       {section === "api" && <ApiPanel />}
-      {section === "sms" && <SmsPanel />}
       {section === "bank" && <BankPanel />}
       {section === "database" && <DatabasePanel />}
       {section === "actions" && <ActionsPanel />}
@@ -301,7 +299,7 @@ function ApiPanel() {
   const create = useAppStore((s) => s.createApiClient);
   const revoke = useAppStore((s) => s.revokeApiClient);
   const [name, setName] = useState("");
-  const [scopes, setScopes] = useState("sms.ingest");
+  const [scopes, setScopes] = useState("bank.webhook");
   return (
     <div className="flex flex-col gap-6">
       <Card className="max-w-xl">
@@ -358,72 +356,6 @@ function ApiPanel() {
             <Td>{l.method}</Td>
             <Td className="font-mono text-xs">{l.endpoint}</Td>
             <Td className="tabular-nums">{l.statusCode}</Td>
-          </tr>
-        ))}
-      </DataTable>
-    </div>
-  );
-}
-
-function SmsPanel() {
-  const devices = useAppStore((s) => s.smsDevices);
-  const txns = useAppStore((s) => s.smsTxns);
-  const setStatus = useAppStore((s) => s.setSmsDeviceStatus);
-  const process = useAppStore((s) => s.processSms);
-  const users = useAppStore((s) => s.users);
-  return (
-    <div className="flex flex-col gap-6">
-      <DataTable headers={["Device", "Owner", "Status", "Last sync", ""]}>
-        {devices.map((d) => (
-          <tr key={d.id}>
-            <Td>{d.deviceName}</Td>
-            <Td>{users.find((u) => u.id === d.ownerUserId)?.username}</Td>
-            <Td>
-              <StatusBadge value={d.status} />
-            </Td>
-            <Td className="text-muted">{d.lastSyncAt ? formatDateTime(d.lastSyncAt) : "—"}</Td>
-            <Td>
-              {d.status === "PENDING" ? (
-                <button type="button" className="text-sm text-primary" onClick={() => setStatus(d.id, "APPROVED")}>
-                  Approve
-                </button>
-              ) : d.status === "APPROVED" ? (
-                <button type="button" className="text-sm text-danger" onClick={() => setStatus(d.id, "DISABLED")}>
-                  Disable
-                </button>
-              ) : null}
-            </Td>
-          </tr>
-        ))}
-      </DataTable>
-      <h2 className="font-display text-xl">SMS inbox</h2>
-      <DataTable headers={["When", "Bank", "Amount", "Status", "Raw", ""]}>
-        {txns.map((t) => (
-          <tr key={t.id}>
-            <Td className="text-muted">{formatDateTime(t.receivedAt)}</Td>
-            <Td>{t.bankName}</Td>
-            <Td className="tabular-nums">{t.parsedAmount != null ? formatINR(t.parsedAmount) : "—"}</Td>
-            <Td>
-              <StatusBadge value={t.parseStatus} />
-            </Td>
-            <Td className="max-w-[240px] truncate text-xs text-muted">{t.rawText}</Td>
-            <Td>
-              {!t.processedPaymentId ? (
-                <button
-                  type="button"
-                  className="text-sm text-primary"
-                  onClick={() => {
-                    const res = process(t.id);
-                    if (!res.ok) toast.error(res.error);
-                    else toast.success("Sent to unmatched queue.");
-                  }}
-                >
-                  Process
-                </button>
-              ) : (
-                <span className="text-xs text-muted">Posted</span>
-              )}
-            </Td>
           </tr>
         ))}
       </DataTable>
@@ -492,7 +424,7 @@ function DatabasePanel() {
       ["users", state.users.length],
       ["audit_logs", state.audit.length],
       ["api_clients", state.apiClients.length],
-      ["sms_outbox", (state.smsOutbox ?? []).length],
+      ["bank_transactions", state.bankTxns.length],
     ],
     [state],
   );
@@ -679,7 +611,7 @@ function NotifyPanel() {
                 className="text-sm text-primary"
                 onClick={() => {
                   send(r.id);
-                  toast.success("SMS written to the outbox.");
+                  toast.success("In-app reminder posted to that member’s alerts.");
                 }}
               >
                 Send now

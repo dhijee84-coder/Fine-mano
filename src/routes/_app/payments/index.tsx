@@ -51,7 +51,7 @@ function PaymentsPage() {
       <PageHeader
         kicker="Collections"
         title="Payments"
-        description="Manual, SMS, and bank receipts. Allocate to an installment, approve, or soft-delete with a reason."
+        description="Manual and bank receipts. Allocate to an installment, approve, or soft-delete with a reason."
         actions={
           <>
             {unmatched > 0 ? (

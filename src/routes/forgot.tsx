@@ -3,14 +3,13 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button, Field, Input } from "@/components/kit";
 import { useAppStore } from "@/lib/store";
-import { generateOtp } from "@/lib/otp.server";
+import { generateOtp } from "@/lib/generate-otp";
 
 export const Route = createFileRoute("/forgot")({ component: ForgotPage });
 
 function ForgotPage() {
   const request = useAppStore((s) => s.requestPasswordReset);
   const confirm = useAppStore((s) => s.confirmPasswordReset);
-  const hydrated = useAppStore((s) => s.hasHydrated);
   const navigate = useNavigate();
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -56,7 +55,7 @@ function ForgotPage() {
       <p className="text-[11px] tracking-[0.16em] text-muted uppercase">Member portal</p>
       <h1 className="font-display mt-2 text-3xl">Reset password</h1>
       <p className="mt-2 mb-6 text-sm text-muted">
-        Enter the mobile on your member record. Python generates a 6-digit OTP. You also get an in-app alert on that account — cheaper than SMS.
+        Enter the mobile on your member record. A 6-digit OTP is generated on the server (Python locally, same CSPRNG in Node on Vercel). An in-app alert is also posted on that account.
       </p>
       {step === "phone" ? (
         <form onSubmit={onPhone} className="flex flex-col gap-3 rounded-xl bg-surface p-5 hairline">
@@ -69,14 +68,14 @@ function ForgotPage() {
               inputMode="tel"
             />
           </Field>
-          <Button type="submit" disabled={!hydrated || busy}>
+          <Button type="submit" disabled={busy}>
             {busy ? "Generating code…" : "Send code"}
           </Button>
         </form>
       ) : (
         <form onSubmit={onReset} className="flex flex-col gap-3 rounded-xl bg-surface p-5 hairline">
           {issued ? (
-            <p className="font-mono text-xs text-ink">Python OTP (shown here so you can test): {issued}</p>
+            <p className="font-mono text-xs text-ink">OTP (shown here so you can test): {issued}</p>
           ) : null}
           <Field label="Code">
             <Input value={otp} onChange={(e) => setOtp(e.target.value)} required />

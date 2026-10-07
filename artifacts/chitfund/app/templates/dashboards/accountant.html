@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-{% block title %}Accountant Dashboard{% endblock %}
-{% block content %}
-<h2>Accountant Dashboard</h2>
-<div class="card-grid">
-  <div class="card"><h3>Collections</h3><a href="{{ url_for("payments.list_payments") }}">View payments</a></div>
-  <div class="card"><h3>Unmatched Payments</h3><a href="{{ url_for("payments.unmatched_payments") }}">Review</a></div>
-</div>
-{% endblock %}

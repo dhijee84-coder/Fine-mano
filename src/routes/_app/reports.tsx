@@ -30,7 +30,7 @@ function ReportsPage() {
     .filter((i) => i.status === "OVERDUE")
     .reduce((s, i) => s + (i.amountDue - i.amountPaid), 0);
 
-  const bySource = ["MANUAL", "SMS", "BANK"].map((src) => ({
+  const bySource = ["MANUAL", "BANK"].map((src) => ({
     name: src,
     value: payments.filter((p) => p.source === src).reduce((s, p) => s + p.amount, 0),
   }));

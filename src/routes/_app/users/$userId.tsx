@@ -5,8 +5,8 @@ import { PageHeader } from "@/components/desk";
 import { Button, Card, CardTitle, Field, Input, Select } from "@/components/kit";
 import { Forbidden } from "@/components/desk";
 import { useAppStore } from "@/lib/store";
-import { useHas } from "@/lib/session";
-import { PERMISSIONS, ROLE_LABELS, ROLE_NAMES, type RoleName } from "@/lib/permissions";
+import { useHas, useSessionUser } from "@/lib/session";
+import { PERMISSIONS, ROLE_LABELS, assignableRoles, type RoleName } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_app/users/$userId")({ component: UserDetail });
 
@@ -15,6 +15,8 @@ function UserDetail() {
   const canView = useHas("users.view");
   const canRoles = useHas("users.assign_roles");
   const canPerms = useHas("users.manage_permissions");
+  const actor = useSessionUser();
+  const roles = assignableRoles(actor?.role);
   const user = useAppStore((s) => s.users.find((u) => u.id === userId));
   const overridesAll = useAppStore((s) => s.overrides);
   const overrides = overridesAll.filter((o) => o.userId === userId);
@@ -62,7 +64,7 @@ function UserDetail() {
             <form onSubmit={onRole} className="flex flex-col gap-3">
               <Field label="Role">
                 <Select value={role} onChange={(e) => setRole(e.target.value as RoleName)}>
-                  {ROLE_NAMES.map((r) => (
+                  {roles.map((r) => (
                     <option key={r} value={r}>
                       {ROLE_LABELS[r]}
                     </option>

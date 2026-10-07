@@ -1,6 +1,6 @@
 import type { RoleName, ModuleKey } from "./permissions";
 
-export type PaymentSource = "MANUAL" | "SMS" | "BANK";
+export type PaymentSource = "MANUAL" | "BANK";
 export type PaymentStatus = "PENDING" | "ALLOCATED" | "APPROVED" | "REVERSED";
 export type InstallmentStatus = "PENDING" | "PAID" | "PARTIAL" | "OVERDUE";
 export type SchemeStatus = "ACTIVE" | "CLOSED" | "DRAFT";
@@ -241,7 +241,7 @@ export interface Reminder {
   id: string;
   memberId: string;
   installmentId: string | null;
-  channel: "SMS" | "EMAIL" | "IN_APP";
+  channel: "IN_APP" | "EMAIL";
   message: string;
   status: "PENDING" | "SENT" | "FAILED";
   scheduledFor: string;
